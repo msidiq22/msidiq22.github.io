@@ -1,83 +1,94 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Aplikasi Presensi GPS & Selfie</title>
   <style>
-    body { font-family: sans-serif; margin: 20px; text-align: center; background: #f4f7f6; }
-    .container { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    video { width: 100%; border-radius: 10px; background: #000; margin-bottom: 10px; display: none; }
-    input, select, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-    button { background: #28a745; color: white; font-weight: bold; border: none; cursor: pointer; }
-    button:disabled { background: #ccc; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 400px; text-align: center; box-sizing: border-box; }
+    h3 { margin-top: 0; color: #1a1a1a; font-size: 22px; }
+    
+    /* Video & Canvas */
+    .video-container { position: relative; margin-bottom: 15px; border-radius: 12px; overflow: hidden; background: #000; }
+    video { width: 100%; display: none; transform: scaleX(-1); /* Efek cermin untuk selfie */ }
+    canvas { display: none; }
+    
+    /* Form Input */
+    input, select, button { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; font-size: 15px; box-sizing: border-box; outline: none; }
+    input:focus, select:focus { border-color: #007bff; }
+    
+    /* Tombol */
+    button { color: white; font-weight: bold; border: none; cursor: pointer; transition: 0.3s; }
     #btnKamera { background: #007bff; margin-bottom: 15px; }
-    #status-msg { font-size: 0.9em; margin-top: 10px; font-weight: bold; }
-
-    /* --- CSS UNTUK POPUP MODAL --- */
-    .modal-overlay {
-      display: none; /* Sembunyikan secara default */
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6); 
-      z-index: 1000; 
-      justify-content: center; 
-      align-items: center;
-    }
-    .modal-content {
-      background: white; padding: 25px; border-radius: 15px; 
-      text-align: center; max-width: 85%; width: 350px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    }
-    .modal-content h3 { margin-top: 0; color: #dc3545; }
-    .modal-content p { font-size: 14px; color: #333; line-height: 1.5; text-align: left; }
-    .btn-tutup { background: #dc3545; margin-top: 15px; }
+    #btnKamera:hover { background: #0056b3; }
+    #btnKirim { background: #28a745; }
+    #btnKirim:hover { background: #218838; }
+    button:disabled { background: #cccccc; cursor: not-allowed; }
+    
+    /* Pesan Status */
+    #status-msg { font-size: 14px; margin-top: 15px; font-weight: 600; min-height: 20px; }
+    
+    /* Modal Error Kamera */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+    .modal-content { background: white; padding: 30px; border-radius: 16px; text-align: center; width: 100%; max-width: 350px; }
+    .modal-content h3 { color: #dc3545; margin-bottom: 15px; }
+    .modal-content p { color: #555; line-height: 1.6; text-align: left; font-size: 14px; }
+    .btn-tutup { background: #dc3545; margin-top: 20px; }
   </style>
 </head>
 <body>
-  
+
   <div id="kameraModal" class="modal-overlay">
     <div class="modal-content">
       <h3>🚨 Izin Kamera Ditolak</h3>
-      <p>Browser memblokir akses kamera. Agar bisa absen, lakukan langkah berikut:</p>
-      <p>
-        1. Klik <b>ikon gembok 🔒</b> di sebelah kiri atas URL.<br>
-        2. Cari tulisan Kamera, lalu ubah menjadi <b>Allow (Izinkan)</b>.<br>
-        3. Klik tombol refresh (muat ulang) halaman ini.
-      </p>
-      <button class="btn-tutup" onclick="tutupModal()">Saya Mengerti</button>
+      <p>Browser Anda memblokir akses kamera. Agar bisa melakukan presensi, mohon izinkan akses kamera di pengaturan browser Anda (klik ikon gembok di sebelah URL), lalu refresh halaman ini.</p>
+      <button class="btn-tutup" onclick="document.getElementById('kameraModal').style.display='none'">Tutup Pesan</button>
     </div>
   </div>
 
-  <div class="container">
-    <h3>Presensi Selfie & GPS</h3>
+  <div class="card">
+    <h3>Presensi Kehadiran</h3>
     
-    <button type="button" id="btnKamera" onclick="bukaKamera()">📷 Buka Kamera</button>
+    <button type="button" id="btnKamera" onclick="bukaKamera()">📷 Aktifkan Kamera</button>
     
-    <video id="video" autoplay playsinline></video>
-    <canvas id="canvas" style="display:none;"></canvas>
+    <div class="video-container">
+      <video id="video" autoplay playsinline></video>
+    </div>
+    <canvas id="canvas"></canvas>
     
-    <input type="text" id="nama" placeholder="Masukkan Nama Lengkap">
+    <input type="text" id="nama" placeholder="Masukkan Nama Lengkap Anda" required>
     <select id="status">
-      <option value="Masuk">Masuk</option>
-      <option value="Pulang">Pulang</option>
+      <option value="Masuk">Jam Masuk</option>
+      <option value="Pulang">Jam Pulang</option>
     </select>
     
-    <button id="btnKirim" onclick="prosesPresensi()" disabled>Kirim Presensi</button>
+    <button id="btnKirim" onclick="prosesPresensi()" disabled>Kirim Presensi GPS & Foto</button>
+    
     <div id="status-msg"></div>
   </div>
- 
+
   <script>
+    // =========================================================================
+    // ⚠️ PENTING: GANTI URL DI BAWAH INI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
+    // =========================================================================
+    const URL_GAS = "https://script.google.com/macros/s/GANTI_DENGAN_ID_SCRIPT_ANDA/exec"; 
+    
+    // Konfigurasi Lokasi Kantor
+    const latKantor = -1.2118383114367253; 
+    const lonKantor = 103.79415069372715;
+    const radiusMaks = 100; // Jarak maksimal dalam meter
+    
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const btnKirim = document.getElementById('btnKirim');
     const btnKamera = document.getElementById('btnKamera');
     const msg = document.getElementById('status-msg');
-    const modal = document.getElementById('kameraModal'); // Mengambil elemen modal
- 
-    const latKantor = -1.2118383114367253; 
-    const lonKantor = 103.79415069372715;
-    const radiusMaks = 100; 
- 
+
+    // Fungsi Mengaktifkan Kamera
     function bukaKamera() {
-      msg.innerText = "Meminta izin kamera...";
-      msg.style.color = "blue";
+      msg.innerText = "Meminta izin akses kamera...";
+      msg.style.color = "#007bff";
 
       navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
         .then(stream => {
@@ -85,22 +96,17 @@
           video.srcObject = stream;
           btnKamera.style.display = "none"; 
           btnKirim.disabled = false; 
-          msg.innerText = "Kamera aktif, siap presensi.";
-          msg.style.color = "green";
+          msg.innerText = "✅ Kamera aktif. Silakan isi form dan kirim.";
+          msg.style.color = "#28a745";
         })
         .catch(err => {
-          // JIKA ERROR / DITOLAK, TAMPILKAN POPUP KITA, BUKAN ALERT BAWAAN
-          modal.style.display = "flex"; 
-          msg.innerText = "Gagal mengakses kamera.";
-          msg.style.color = "red";
+          document.getElementById('kameraModal').style.display = "flex"; 
+          msg.innerText = "❌ Akses kamera ditolak.";
+          msg.style.color = "#dc3545";
         });
     }
 
-    // Fungsi untuk menutup popup
-    function tutupModal() {
-      modal.style.display = "none";
-    }
- 
+    // Fungsi Hitung Jarak (Rumus Haversine)
     function getDistance(lat1, lon1, lat2, lon2) {
       const R = 6371e3; 
       const φ1 = lat1 * Math.PI/180;
@@ -110,32 +116,46 @@
       const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
       return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
     }
- 
+
+    // Fungsi Eksekusi Presensi
     function prosesPresensi() {
-      const nama = document.getElementById('nama').value;
-      if(!nama) return alert("Isi nama dulu!");
- 
+      const nama = document.getElementById('nama').value.trim();
+      if(!nama) {
+        msg.innerText = "⚠️ Harap isi nama Anda terlebih dahulu!";
+        msg.style.color = "#dc3545";
+        return;
+      }
+
       btnKirim.disabled = true;
-      msg.innerText = "Mengecek Lokasi & Mengambil Foto...";
-      msg.style.color = "blue";
- 
+      btnKirim.innerText = "⏳ Memproses Data...";
+      msg.innerText = "Mengecek Lokasi GPS Anda...";
+      msg.style.color = "#007bff";
+
       navigator.geolocation.getCurrentPosition((pos) => {
         const uLat = pos.coords.latitude;
         const uLon = pos.coords.longitude;
         const jarak = getDistance(uLat, uLon, latKantor, lonKantor);
- 
+
         if(jarak > radiusMaks) {
-          msg.innerText = `Gagal! Jarak Anda ${jarak}m dari kantor. (Maks 100m)`;
-          msg.style.color = "red";
+          msg.innerText = `❌ Presensi Gagal! Jarak Anda ${jarak}m dari kantor. (Maksimal ${radiusMaks}m)`;
+          msg.style.color = "#dc3545";
           btnKirim.disabled = false;
+          btnKirim.innerText = "Kirim Presensi GPS & Foto";
           return;
         }
- 
+
+        msg.innerText = `Lokasi cocok (${jarak}m). Mengunggah data...`;
+
+        // Ambil Gambar dari Video
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
-        const fotoData = canvas.toDataURL('image/jpeg');
- 
+        const ctx = canvas.getContext('2d');
+        // Balikkan canvas agar foto tersimpan tidak terbalik (karena video dicerminkan)
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0);
+        const fotoData = canvas.toDataURL('image/jpeg', 0.8); // Kompresi 80% agar tidak berat
+
         const payload = {
           nama: nama,
           status: document.getElementById('status').value,
@@ -144,22 +164,38 @@
           jarak: jarak,
           image: fotoData
         };
- 
-        google.script.run.withSuccessHandler((res) => {
-          msg.innerText = res;
-          msg.style.color = "green";
+        
+        // Kirim ke Google Apps Script
+        fetch(URL_GAS, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if(data.status === "success") {
+            msg.innerText = "✅ " + data.pesan;
+            msg.style.color = "#28a745";
+            document.getElementById('nama').value = ""; // Kosongkan nama setelah sukses
+          } else {
+            msg.innerText = "❌ Error Server: " + data.pesan;
+            msg.style.color = "#dc3545";
+          }
           btnKirim.disabled = false;
-          document.getElementById('nama').value = "";
-        }).withFailureHandler((err) => {
-          msg.innerText = "Gagal menyimpan data.";
-          msg.style.color = "red";
+          btnKirim.innerText = "Kirim Presensi GPS & Foto";
+        })
+        .catch(error => {
+          msg.innerText = "❌ Gagal mengirim data. Pastikan koneksi internet stabil.";
+          msg.style.color = "#dc3545";
           btnKirim.disabled = false;
-        }).simpanPresensi(payload);
- 
+          btnKirim.innerText = "Kirim Presensi GPS & Foto";
+        });
+
       }, (err) => {
-        msg.innerText = "Gagal mendapatkan GPS. Pastikan Izin Lokasi aktif!";
-        msg.style.color = "red";
+        msg.innerText = "❌ Gagal mendapatkan GPS. Pastikan GPS/Lokasi HP Anda menyala!";
+        msg.style.color = "#dc3545";
         btnKirim.disabled = false;
+        btnKirim.innerText = "Kirim Presensi GPS & Foto";
       }, { enableHighAccuracy: true });
     }
   </script>
