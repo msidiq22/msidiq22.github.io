@@ -8,28 +8,18 @@
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
     .card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 400px; text-align: center; box-sizing: border-box; }
     h3 { margin-top: 0; color: #1a1a1a; font-size: 22px; }
-    
-    /* Video & Canvas */
     .video-container { position: relative; margin-bottom: 15px; border-radius: 12px; overflow: hidden; background: #000; }
-    video { width: 100%; display: none; transform: scaleX(-1); /* Efek cermin untuk selfie */ }
+    video { width: 100%; display: none; transform: scaleX(-1); }
     canvas { display: none; }
-    
-    /* Form Input */
     input, select, button { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; font-size: 15px; box-sizing: border-box; outline: none; }
     input:focus, select:focus { border-color: #007bff; }
-    
-    /* Tombol */
     button { color: white; font-weight: bold; border: none; cursor: pointer; transition: 0.3s; }
     #btnKamera { background: #007bff; margin-bottom: 15px; }
     #btnKamera:hover { background: #0056b3; }
     #btnKirim { background: #28a745; }
     #btnKirim:hover { background: #218838; }
     button:disabled { background: #cccccc; cursor: not-allowed; }
-    
-    /* Pesan Status */
     #status-msg { font-size: 14px; margin-top: 15px; font-weight: 600; min-height: 20px; }
-    
-    /* Modal Error Kamera */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
     .modal-content { background: white; padding: 30px; border-radius: 16px; text-align: center; width: 100%; max-width: 350px; }
     .modal-content h3 { color: #dc3545; margin-bottom: 15px; }
@@ -70,14 +60,13 @@
 
   <script>
     // =========================================================================
-    // ⚠️ PENTING: GANTI URL DI BAWAH INI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
+    // PASTIKAN URL GAS INI SUDAH BENAR
     // =========================================================================
-    const URL_GAS = "https://script.google.com/macros/s/AKfycbwSzuReXYNAcnci5JvJuYsrVzOMOz6-u2oFKTCD-yDEY_EfPJTW6Xf4Bou2gMvcMqAARA/exec"; 
+    const URL_GAS = "https://script.google.com/macros/s/GANTI_DENGAN_ID_SCRIPT_ANDA/exec"; 
     
-    // Konfigurasi Lokasi Kantor
     const latKantor = -1.2118383114367253; 
     const lonKantor = 103.79415069372715;
-    const radiusMaks = 100; // Jarak maksimal dalam meter
+    const radiusMaks = 100; 
     
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
@@ -85,7 +74,6 @@
     const btnKamera = document.getElementById('btnKamera');
     const msg = document.getElementById('status-msg');
 
-    // Fungsi Mengaktifkan Kamera
     function bukaKamera() {
       msg.innerText = "Meminta izin akses kamera...";
       msg.style.color = "#007bff";
@@ -106,7 +94,6 @@
         });
     }
 
-    // Fungsi Hitung Jarak (Rumus Haversine)
     function getDistance(lat1, lon1, lat2, lon2) {
       const R = 6371e3; 
       const φ1 = lat1 * Math.PI/180;
@@ -117,7 +104,6 @@
       return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
     }
 
-    // Fungsi Eksekusi Presensi
     function prosesPresensi() {
       const nama = document.getElementById('nama').value.trim();
       if(!nama) {
@@ -146,15 +132,13 @@
 
         msg.innerText = `Lokasi cocok (${jarak}m). Mengunggah data...`;
 
-        // Ambil Gambar dari Video
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         const ctx = canvas.getContext('2d');
-        // Balikkan canvas agar foto tersimpan tidak terbalik (karena video dicerminkan)
         ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
         ctx.drawImage(video, 0, 0);
-        const fotoData = canvas.toDataURL('image/jpeg', 0.8); // Kompresi 80% agar tidak berat
+        const fotoData = canvas.toDataURL('image/jpeg', 0.8);
 
         const payload = {
           nama: nama,
@@ -165,10 +149,13 @@
           image: fotoData
         };
         
-        // Kirim ke Google Apps Script
+        // ==========================================
+        // PERBAIKAN FETCH ADA DI SINI
+        // ==========================================
         fetch(URL_GAS, {
+          redirect: "follow", // <-- PENTING: Mencegah error blokir redirect
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Wajib text/plain
           body: JSON.stringify(payload)
         })
         .then(response => response.json())
@@ -176,7 +163,7 @@
           if(data.status === "success") {
             msg.innerText = "✅ " + data.pesan;
             msg.style.color = "#28a745";
-            document.getElementById('nama').value = ""; // Kosongkan nama setelah sukses
+            document.getElementById('nama').value = ""; 
           } else {
             msg.innerText = "❌ Error Server: " + data.pesan;
             msg.style.color = "#dc3545";
@@ -188,16 +175,3 @@
           msg.innerText = "❌ Gagal mengirim data. Pastikan koneksi internet stabil.";
           msg.style.color = "#dc3545";
           btnKirim.disabled = false;
-          btnKirim.innerText = "Kirim Presensi GPS & Foto";
-        });
-
-      }, (err) => {
-        msg.innerText = "❌ Gagal mendapatkan GPS. Pastikan GPS/Lokasi HP Anda menyala!";
-        msg.style.color = "#dc3545";
-        btnKirim.disabled = false;
-        btnKirim.innerText = "Kirim Presensi GPS & Foto";
-      }, { enableHighAccuracy: true });
-    }
-  </script>
-</body>
-</html>
